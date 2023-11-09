@@ -13776,7 +13776,7 @@ class MainFrame(ReportFrame, BaseFrame, LUT3DMixin):
                 cgats = re.sub(
                     rb'(\nDISPLAY\s+"[^"]*"\n)',
                     b'\nREFERENCE "%s"\\1'
-                    % reference_ti3[0].get("TARGET_INSTRUMENT").replace(r"\\", r"\\\\"),
+                    % reference_ti3[0].get("TARGET_INSTRUMENT").decode().replace(r"\\", r"\\\\").encode(),
                     cgats,
                 )
             if not re.search(rb'\nTECHNOLOGY\s+".+?"\n', cgats) and tech:
