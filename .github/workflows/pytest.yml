@@ -1,16 +1,25 @@
 name: Tests
-on: [push]
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, unlabeled]
+    branches:
+      - develop
+  workflow_dispatch:
 
 jobs:
   build:
-    name: Test with Python ${{ matrix.python-version }} and wxPython ${{ matrix.wx-version }}
+    name: Test with Python ${{ matrix.python-version }} and wxPython ${{ matrix.wx-version }} on ${{ matrix.os }}
     env:
       DISPLAY: :0
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: False
       matrix:
+        os:
+          - ubuntu-22.04
+          - macos-12
+
         python-version:
           - "3.8"
           - "3.9"
@@ -18,10 +27,7 @@ jobs:
           - "3.11"
         wx-version:
           - "4.1.1"
-          - "4.2.0"
-        exclude:
-          - python-version: "3.11"
-            wx-version: "4.1.1"
+          - "4.2.1"
 
     steps:
 
@@ -47,8 +53,9 @@ jobs:
 
     - name: Setup xvfb
       run: |
-        sudo apt-get update
-        sudo apt-get install -y xvfb \
+        if [ "${{ matrix.os }}" == "ubuntu-22.04" ]; then
+          sudo apt-get update
+          sudo apt-get install -y xvfb \
             libxkbcommon-x11-0 \
             libxcb-icccm4 \
             libxcb-image0 \
@@ -58,8 +65,9 @@ jobs:
             libxcb-xinerama0 \
             libxcb-xinput0 \
             libxcb-xfixes0
-        # start xvfb in the background
-        sudo /usr/bin/Xvfb $DISPLAY -screen 0 1280x1024x24 &
+          # start xvfb in the background
+          sudo /usr/bin/Xvfb $DISPLAY -screen 0 1280x1024x24 &
+        fi
 
     - name: Setup Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
@@ -68,15 +76,19 @@ jobs:
 
     - name: Update pip
       run: |
-        sudo apt-get install -y $(grep -o ^[^#][[:alnum:]-]*.* "packages.list")
+        if [ "${{ matrix.os }}" == "ubuntu-22.04" ]; then
+          sudo apt-get install -y $(grep -o ^[^#][[:alnum:]-]*.* "packages.list")
+        fi
         python3 -m pip install --upgrade pip
-        pip install attrdict3
         pip install wheel
 
     - name: Install wxPython wheels ${{ matrix.wx-version }}
       run: |
-        pip install https://wxpython.p5k.org/wxPython-${{ matrix.wx-version }}-cp${{ env.py_version }}-cp${{ env.py_version }}-linux_x86_64.whl
-
+        if [ "${{ matrix.os }}" == "ubuntu-22.04" ]; then
+          pip install https://wxpython.p5k.org/wxPython-${{ matrix.wx-version }}-cp${{ env.py_version }}-cp${{ env.py_version }}-linux_x86_64.whl
+        elif [ "${{ matrix.os }}" == "macos-12" ]; then
+          pip install wxpython == ${{ matrix.wx-version }}
+        fi
     - name: Install Python dependencies
       run: |
         pip install -r requirements.txt
@@ -86,7 +98,11 @@ jobs:
       run: |
         sudo chmod a+rw /etc/udev/rules.d
         python3 setup.py install
-        cp ./build/lib.linux-x86_64-${{ env.add_dir_str }}/DisplayCAL/lib64/python${{ env.py_version }}/RealDisplaySizeMM.cpython-${{ env.py_version }}-x86_64-linux-gnu.so ./DisplayCAL/lib64/python${{ env.py_version }}/
+        if [ "${{ matrix.os }}" == "ubuntu-22.04" ]; then
+          cp ./build/lib.linux-x86_64-${{ env.add_dir_str }}/DisplayCAL/lib64/python${{ env.py_version }}/RealDisplaySizeMM.cpython-${{ env.py_version }}-x86_64-linux-gnu.so ./DisplayCAL/lib64/python${{ env.py_version }}/
+        elif [ "${{ matrix.os }}" == "macos-12" ]; then
+        cp ./build/lib.macosx-14-x86_64-${{ env.add_dir_str }}/DisplayCAL/lib64/RealDisplaySizeMM.cpython-${{ env.py_version }}-darwin.so ./DisplayCAL/lib64/
+        fi
 
     - name: Test with pytest
       run: |
