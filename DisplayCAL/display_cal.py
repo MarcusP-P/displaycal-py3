@@ -13821,7 +13821,7 @@ class MainFrame(ReportFrame, BaseFrame, LUT3DMixin):
                     b'\nOBSERVER "%s"\\1' % observer.replace(b"\\", b"\\\\"),
                     cgats,
                 )
-            if reference_observer.encode("utf-8") and not re.search(
+            if reference_observer != None and reference_observer.encode("utf-8") and not re.search(
                 rb'\nREFERENCE_OBSERVER\s+".+?"\n', cgats
             ):
                 # By default, CCMX/CCSS files don't contain observer
