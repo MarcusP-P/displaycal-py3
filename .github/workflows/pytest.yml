@@ -87,7 +87,7 @@ jobs:
         if [ "${{ matrix.os }}" == "ubuntu-22.04" ]; then
           pip install https://wxpython.p5k.org/wxPython-${{ matrix.wx-version }}-cp${{ env.py_version }}-cp${{ env.py_version }}-linux_x86_64.whl
         elif [ "${{ matrix.os }}" == "macos-12" ]; then
-          pip install wxpython == ${{ matrix.wx-version }}
+          pip install "wxpython == ${{ matrix.wx-version }}"
         fi
     - name: Install Python dependencies
       run: |
