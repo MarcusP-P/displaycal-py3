@@ -31,7 +31,7 @@ jobs:
           
         exclude:
           - python-version: "3.11"
-            wx-version: "4.2.1"
+            wx-version: "4.1.1"
     steps:
 
     - uses: actions/checkout@v3
