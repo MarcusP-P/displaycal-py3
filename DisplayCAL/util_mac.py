@@ -143,7 +143,7 @@ def get_model_id():
         return None
     # TODO: There is possibly an error waiting for us here in the next line. Not on Mac
     #       can not test it right now!
-    return "".join(output).split(None, 1)[-1].strip()
+    return output.decode().split(None)[-1].strip()
 
 
 def get_machine_attributes(model_id=None):
