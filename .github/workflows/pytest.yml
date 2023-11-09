@@ -28,7 +28,10 @@ jobs:
         wx-version:
           - "4.1.1"
           - "4.2.1"
-
+          
+        exclude:
+          - python-version: "3.11"
+            wx-version: "4.2.1"
     steps:
 
     - uses: actions/checkout@v3
@@ -96,7 +99,9 @@ jobs:
 
     - name: Compile C-Extensions
       run: |
-        sudo chmod a+rw /etc/udev/rules.d
+        if [ "${{ matrix.os }}" == "ubuntu-22.04" ]; then
+          sudo chmod a+rw /etc/udev/rules.d
+        fi
         python3 setup.py install
         if [ "${{ matrix.os }}" == "ubuntu-22.04" ]; then
           cp ./build/lib.linux-x86_64-${{ env.add_dir_str }}/DisplayCAL/lib64/python${{ env.py_version }}/RealDisplaySizeMM.cpython-${{ env.py_version }}-x86_64-linux-gnu.so ./DisplayCAL/lib64/python${{ env.py_version }}/
