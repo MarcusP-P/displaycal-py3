@@ -106,7 +106,7 @@ jobs:
         if [ "${{ matrix.os }}" == "ubuntu-22.04" ]; then
           cp ./build/lib.linux-x86_64-${{ env.add_dir_str }}/DisplayCAL/lib64/python${{ env.py_version }}/RealDisplaySizeMM.cpython-${{ env.py_version }}-x86_64-linux-gnu.so ./DisplayCAL/lib64/python${{ env.py_version }}/
         elif [ "${{ matrix.os }}" == "macos-12" ]; then
-        cp ./build/$python -c 'from distutils.util import get_platform; import sys; print("lib."+get_platform()+"-"+sys.implementation.cache_tag)')/DisplayCAL/lib64/RealDisplaySizeMM.cpython-${{ env.py_version }}-darwin.so ./DisplayCAL/lib64/
+        cp ./build/$(python -c 'from distutils.util import get_platform; import sys; print("lib."+get_platform()+"-"+sys.implementation.cache_tag)')/DisplayCAL/lib64/RealDisplaySizeMM.cpython-${{ env.py_version }}-darwin.so ./DisplayCAL/lib64/
         fi
 
     - name: Test with pytest
