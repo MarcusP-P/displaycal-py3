@@ -10,6 +10,7 @@ jobs:
   build:
     name: Test with Python ${{ matrix.python-version }} and wxPython ${{ matrix.wx-version }} on ${{ matrix.os }}
     env:
+      if: matrix.os == 'ubuntu-22.04'
       DISPLAY: :0
     runs-on: ${{ matrix.os }}
 
