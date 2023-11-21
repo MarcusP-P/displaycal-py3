@@ -15,7 +15,7 @@ lib64Path=join("DisplayCAL", "lib64")
 if sys.platform=="darwin":
     libFile=f"RealDisplaySizeMM.{sys.implementation.cache_tag}-{sys.platform}.so"
 else:
-    lib64Path=join(lib64Path, f"python{sys.version_info[0]}{sys.version_info[1])"
+    lib64Path=join(lib64Path, f"python{sys.version_info[0]}{sys.version_info[1]}"
     libFile=f"RealDisplaySizeMM.{sys.implementation.cache_tag}-x86_64-linux-gnu.so"
 
 
