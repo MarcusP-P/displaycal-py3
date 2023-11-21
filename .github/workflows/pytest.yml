@@ -36,19 +36,6 @@ jobs:
 
     - uses: actions/checkout@v3
 
-    - name: Set Environment Variables
-      run: |
-        echo "py_version=$(echo ${{ matrix.python-version }} | tr -d .)" >> $GITHUB_ENV
-        if [ "${{ matrix.python-version }}" == "3.8" ]; then
-          echo "add_dir_str=${{ matrix.python-version }}" >> $GITHUB_ENV
-        elif [ "${{ matrix.python-version }}" == "3.9" ]; then
-          echo "add_dir_str=${{ matrix.python-version }}" >> $GITHUB_ENV
-        elif [ "${{ matrix.python-version }}" == "3.10" ]; then
-          echo "add_dir_str=cpython-310" >> $GITHUB_ENV
-        elif [ "${{ matrix.python-version }}" == "3.11" ]; then
-          echo "add_dir_str=cpython-311" >> $GITHUB_ENV
-        fi
-
     - name: Setup timezone
       if: matrix.os == 'ubuntu-22.04'
       uses: zcong1993/setup-timezone@master
@@ -103,14 +90,7 @@ jobs:
           sudo chmod a+rw /etc/udev/rules.d
         fi
         python3 setup.py install
-        echo "Over here..."
-        if [ "${{ matrix.os }}" == "ubuntu-22.04" ]; then
-          echo cp ./build/lib.linux-x86_64-${{ env.add_dir_str }}/DisplayCAL/lib64/python${{ env.py_version }}/RealDisplaySizeMM.cpython-${{ env.py_version }}-x86_64-linux-gnu.so ./DisplayCAL/lib64/python${{ env.py_version }}/
-          cp ./build/lib.linux-x86_64-${{ env.add_dir_str }}/DisplayCAL/lib64/python${{ env.py_version }}/RealDisplaySizeMM.cpython-${{ env.py_version }}-x86_64-linux-gnu.so ./DisplayCAL/lib64/python${{ env.py_version }}/
-        elif [ "${{ matrix.os }}" == "macos-12" ]; then
-          echo ./build/$(python -c 'from distutils.util import get_platform; import sys; print("lib."+get_platform()+"-"+sys.implementation.cache_tag)')/DisplayCAL/lib64/RealDisplaySizeMM.cpython-${{ env.py_version }}-darwin.so ./DisplayCAL/lib64/
-          cp ./build/$(python -c 'from distutils.util import get_platform; import sys; print("lib."+get_platform()+"-"+sys.implementation.cache_tag)')/DisplayCAL/lib64/RealDisplaySizeMM.cpython-${{ env.py_version }}-darwin.so ./DisplayCAL/lib64/
-        fi
+        python3 misc/workflows/copy_c_extension.py
 
     - name: Test with pytest
       run: |
