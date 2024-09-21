@@ -4,17 +4,23 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, unlabeled]
     branches:
       - develop
+  workflow_dispatch:
 
 jobs:
   build:
-    name: Test with Python ${{ matrix.python-version }} and wxPython ${{ matrix.wx-version }}
+    name: Test with Python ${{ matrix.python-version }} and wxPython ${{ matrix.wx-version }} on ${{ matrix.os }}
     env:
+      if: runner.os == 'Linux'
       DISPLAY: :0
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: False
       matrix:
+        os:
+          - ubuntu-22.04
+          - macos-12
+
         python-version:
           - "3.8"
           - "3.9"
@@ -23,48 +29,41 @@ jobs:
         wx-version:
           - "4.1.1"
           - "4.2.1"
+          
         exclude:
           - python-version: "3.11"
             wx-version: "4.1.1"
-
     steps:
 
     - uses: actions/checkout@v3
 
-    - name: Set Environment Variables
-      run: |
-        echo "py_version=$(echo ${{ matrix.python-version }} | tr -d .)" >> $GITHUB_ENV
-        if [ "${{ matrix.python-version }}" == "3.8" ]; then
-          echo "add_dir_str=${{ matrix.python-version }}" >> $GITHUB_ENV
-        elif [ "${{ matrix.python-version }}" == "3.9" ]; then
-          echo "add_dir_str=${{ matrix.python-version }}" >> $GITHUB_ENV
-        elif [ "${{ matrix.python-version }}" == "3.10" ]; then
-          echo "add_dir_str=cpython-310" >> $GITHUB_ENV
-        elif [ "${{ matrix.python-version }}" == "3.11" ]; then
-          echo "add_dir_str=cpython-311" >> $GITHUB_ENV
-        fi
-
     - name: Setup timezone
+      if: runner.os == 'Linux'
       uses: zcong1993/setup-timezone@master
       with:
         timezone: UTC
 
     - name: Setup xvfb
+      if: runner.os == 'Linux'
       run: |
         sudo apt-get update
         sudo apt-get install -y xvfb \
-            libxkbcommon-x11-0 \
-            libxcb-icccm4 \
-            libxcb-image0 \
-            libxcb-keysyms1 \
-            libxcb-randr0 \
-            libxcb-render-util0 \
-            libxcb-xinerama0 \
-            libxcb-xinput0 \
-            libxcb-xfixes0
+          libxkbcommon-x11-0 \
+          libxcb-icccm4 \
+          libxcb-image0 \
+          libxcb-keysyms1 \
+          libxcb-randr0 \
+          libxcb-render-util0 \
+          libxcb-xinerama0 \
+          libxcb-xinput0 \
+          libxcb-xfixes0
         # start xvfb in the background
         sudo /usr/bin/Xvfb $DISPLAY -screen 0 1280x1024x24 &
 
+    - name: Set Environment Variables
+      run: |
+        echo "py_version=$(echo ${{ matrix.python-version }} | tr -d .)" >> $GITHUB_ENV
+  
     - name: Setup Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
@@ -72,14 +71,19 @@ jobs:
 
     - name: Update pip
       run: |
-        sudo apt-get install -y $(grep -o ^[^#][[:alnum:]-]*.* "packages.list")
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          sudo apt-get install -y $(grep -o ^[^#][[:alnum:]-]*.* "packages.list")
+        fi
         python3 -m pip install --upgrade pip
         pip install wheel
 
     - name: Install wxPython wheels ${{ matrix.wx-version }}
       run: |
-        pip install https://wxpython.p5k.org/wxPython-${{ matrix.wx-version }}-cp${{ env.py_version }}-cp${{ env.py_version }}-linux_x86_64.whl
-
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          pip install https://wxpython.p5k.org/wxPython-${{ matrix.wx-version }}-cp${{ env.py_version }}-cp${{ env.py_version }}-linux_x86_64.whl
+        elif [ "$RUNNER_OS" == "macOS" ]; then
+          pip install "wxpython == ${{ matrix.wx-version }}"
+        fi
     - name: Install Python dependencies
       run: |
         pip install -r requirements.txt
@@ -87,9 +91,11 @@ jobs:
 
     - name: Compile C-Extensions
       run: |
-        sudo chmod a+rw /etc/udev/rules.d
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          sudo chmod a+rw /etc/udev/rules.d
+        fi
         python3 setup.py install
-        cp ./build/lib.linux-x86_64-${{ env.add_dir_str }}/DisplayCAL/lib64/python${{ env.py_version }}/RealDisplaySizeMM.cpython-${{ env.py_version }}-x86_64-linux-gnu.so ./DisplayCAL/lib64/python${{ env.py_version }}/
+        python3 misc/workflows/copy_c_extension.py
 
     - name: Test with pytest
       run: |
@@ -98,6 +104,6 @@ jobs:
     - name: Archive code coverage results
       uses: actions/upload-artifact@v3
       with:
-        name: code-coverage-report
+        name: code-coverage-report-${{ matrix.os }}-python-${{ matrix.python-version }}-wxPython-${{ matrix.wx-version }}
         path: htmlcov
         retention-days: 10
